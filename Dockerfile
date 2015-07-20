@@ -1,52 +1,34 @@
+# Basics
+#
 # lighttpd rtorrent rutorrent
 #
 # Pour Debian Wheezy
-# 
+#
 # Version 0.0.1
 #
 
 
 FROM debian:wheezy
-MAINTAINER polohb "polohb@gmail.com"
+MAINTAINER polohb <polohb@gmail.com>
 
-# Update sources.list
-RUN cp /etc/apt/sources.list /etc/apt/souces.list.bckup \
-    && echo "deb http://http.debian.net/debian wheezy main contrib non-free" > /etc/apt/source.list \
-    && echo "deb-src http://http.debian.net/debian wheezy main contrib non-free" >> /etc/apt/source.list" \
-    && echo " " >> /etc/apt/source.list" \
-    && echo "deb http://http.debian.net/debian wheezy-updates main contrib non-free" >> /etc/apt/source.list" \
-    && echo "deb-src http://http.debian.net/debian wheezy-updates main contrib non-free" >> /etc/apt/source.list" \
-    && echo " " >> /etc/apt/source.list" \
-    && echo "#deb http://security.debian.org/ wheezy/updates main contrib non-free" >> /etc/apt/source.list" \
-    && echo "#deb-src http://security.debian.org/ wheezy/updates main contrib non-free" >> /etc/apt/source.list" 
-
-# Update System
+# Update system and install some package
 RUN apt-get update -y \
-    && apt-get upgrade -y \
-    && apt-get autoclean -y
+&& apt-get install -q -y ssh wget curl \
+&& rm -rf /var/lib/apt/lists/*
 
 
-# Install some simple soft
-RUN apt-get install \
- vim \ 
- ssh \
- wget \ 
- curl \
- htop 
-
-
-# Prepare Environment 
+# Prepare Environment
 RUN apt-get install \
  build-essential \
- autoconf \ 
+ autoconf \
  automake \
- apache2-utils \ 
+ apache2-utils \
  libtool \
  libncurses5-dev \
- libncursesw5-dev \ 
+ libncursesw5-dev \
  screen \
  detach \
- ntp \ 
+ ntp \
  ntpdate \
  openssl \
  ssl-cert \
@@ -54,9 +36,9 @@ RUN apt-get install \
  ca-certificates \
  lighttpd \
  php5 php5-cli php5-geoip php5-cgi php5-dev php5-fpm php5-curl php5-mcrypt php5-xmlrpc\
- libapache2-mod-php5 libapache2-mod-scgi \ 
- libcppunit-dev libsigc++-2.0-dev \ 
- subversion \ 
+ libapache2-mod-php5 libapache2-mod-scgi \
+ libcppunit-dev libsigc++-2.0-dev \
+ subversion \
  unzip \
  cfv
 
@@ -79,7 +61,7 @@ RUN cd xmlrpc \
     && ./configure --prefix=/usr --enable-libxml2-backend --disable-libwww-client --disable-wininet-client --disable-abyss-server --disable-cgi-server \
     && make \
     && make install \
-    && cd ../ 
+    && cd ../
 
 # Compile / Install libtorrent & rtorrent
 RUN cd libtorrent-0.13.4 \
@@ -92,7 +74,7 @@ RUN cd libtorrent-0.13.4 \
     && ./configure --prefix=/usr --with-xmlrpc-c \
     && make -j2 \
     && make install \
-    && cd ../ 
+    && cd ../
 
 # acutalize links
 RUN ldconfig
@@ -103,7 +85,7 @@ RUN mkdir -p /home/rtor/bin \
     && mkdir -p /home/rtor/dl/torrents \
     && mkdir -p /home/rtor/dl/torrents_watch
 
-# Put config file 
+# Put config file
 ADD user_files/btlaunch.sh /home/rtor/bin/btlaunch.sh
 ADD user_files/btview.sh /home/rtor/bin/btview.sh
 ADD user_files/rtorrent.rc /home/rtor/.rtorrent.rc
@@ -125,13 +107,3 @@ RUN rm rutorrent-3.6.tar.gz
 # Config rutorrent
 ADD conf_files/config.php.rutorrent /srv/https/rutorrent/config.php
 RUN chown -R www-data:www-data rutorrent
-
-
-
-
-
-
-
-
-
-
