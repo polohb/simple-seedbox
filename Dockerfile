@@ -114,7 +114,7 @@ EXPOSE 443
 EXPOSE 51654
 EXPOSE 51655
 
-VOLUME /home/rtor/dl
+VOLUME /home/rtor/dl/torrents
 VOLUME /srv/https/rutorrent/share
 
 CMD ["supervisord"]
