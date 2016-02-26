@@ -2,108 +2,119 @@
 #
 # lighttpd rtorrent rutorrent
 #
-# Pour Debian Wheezy
+# Pour Ubuntu
 #
-# Version 0.0.1
+# Version 0.1.0
 #
-
-
-FROM debian:wheezy
+FROM ubuntu:latest
 MAINTAINER polohb <polohb@gmail.com>
 
+
 # Update system and install some package
+ADD ./ext/ffmpeg-next.list /etc/apt/sources.list.d/ffmpeg-next.list
 RUN apt-get update -y \
-&& apt-get install -q -y ssh wget curl \
-&& rm -rf /var/lib/apt/lists/*
+    && apt-get install -q -y --force-yes ssh \
+        curl \
+        build-essential \
+        autoconf \
+        automake \
+        apache2-utils \
+        libtool \
+        libncurses5-dev \
+        libncursesw5-dev \
+        ntp \
+        ntpdate \
+        openssl \
+        ssl-cert \
+        libcurl4-openssl-dev \
+        ca-certificates \
+        lighttpd \
+        php5 php5-cli php5-geoip php5-cgi php5-dev php5-fpm php5-curl php5-mcrypt php5-xmlrpc\
+        libapache2-mod-php5 libapache2-mod-scgi \
+        libcppunit-dev libsigc++-2.0-dev \
+        subversion \
+        unzip \
+        cfv \
+        libxml2-dev \
+        supervisor \
+        mediainfo \
+        unrar-free \
+        ffmpeg \
+   && rm -rf /var/lib/apt/lists/*
 
 
-# Prepare Environment
-RUN apt-get install \
- build-essential \
- autoconf \
- automake \
- apache2-utils \
- libtool \
- libncurses5-dev \
- libncursesw5-dev \
- screen \
- detach \
- ntp \
- ntpdate \
- openssl \
- ssl-cert \
- libcurl4-openssl-dev \
- ca-certificates \
- lighttpd \
- php5 php5-cli php5-geoip php5-cgi php5-dev php5-fpm php5-curl php5-mcrypt php5-xmlrpc\
- libapache2-mod-php5 libapache2-mod-scgi \
- libcppunit-dev libsigc++-2.0-dev \
- subversion \
- unzip \
- cfv
-
-
-
-########
-# Go to working dir
+# Get, Compile and Install  xmlrpc
 RUN mkdir -p /opt/prepare-env \
-    && cd /opt/prepare-env
-
-# Get xmlrpc
-RUN svn co https://xmlrpc-c.svn.sourceforge.net/svnroot/xmlrpc-c/stable xmlrpc
-
-# Get rtorrent
-RUN curl http://libtorrent.rakshasa.no/downloads/libtorrent-0.13.4.tar.gz | tar xz
-RUN curl http://libtorrent.rakshasa.no/downloads/rtorrent-0.9.4.tar.gz | tar xz
-
-# Compile / Install xmlrpc
-RUN cd xmlrpc \
+    && cd /opt/prepare-env \
+    && svn co https://xmlrpc-c.svn.sourceforge.net/svnroot/xmlrpc-c/stable xmlrpc \
+    && cd xmlrpc \
     && ./configure --prefix=/usr --enable-libxml2-backend --disable-libwww-client --disable-wininet-client --disable-abyss-server --disable-cgi-server \
     && make \
     && make install \
-    && cd ../
+    && cd ../ \
+    && rm -rf xmlrpc
 
-# Compile / Install libtorrent & rtorrent
-RUN cd libtorrent-0.13.4 \
+# Get, Compile and Install  rtorrent with libtorrent
+RUN curl 'http://rtorrent.net/downloads/libtorrent-0.13.6.tar.gz' | tar xz \
+    && curl http://rtorrent.net/downloads/rtorrent-0.9.6.tar.gz | tar xz \
+    && cd libtorrent-0.13.6 \
     && ./autogen.sh \
     && ./configure --prefix=/usr \
     && make -j2 \
     && make install \
-    && cd ../rtorrent-0.9.3 \
+    && cd ../rtorrent-0.9.6 \
     && ./autogen.sh \
     && ./configure --prefix=/usr --with-xmlrpc-c \
     && make -j2 \
     && make install \
-    && cd ../
+    && cd ../ \
+    && rm -rf libtorrent-0.13.6 rtorrent-0.9.6 \
+    && ldconfig
 
-# acutalize links
-RUN ldconfig
 
-# Create user structure folder
-RUN mkdir -p /home/rtor/bin \
+# Get  and Install rutorrent
+RUN mkdir -p /srv/https/ \
+    && cd /srv/https/ \
+    && curl -Lks https://bintray.com/artifact/download/novik65/generic/ruTorrent-3.7.zip -o r.zip \
+    && unzip r.zip \
+    && mv ruTorrent-master rutorrent \
+    && rm -rf r.zip
+
+# Config rutorrent
+ADD ./ext/config.php /srv/https/rutorrent/conf/config.php
+RUN mkdir -p /srv/https/rutorrent/share/torrents \
+    && chown -R www-data:www-data /srv/https/rutorrent  \
+    && chmod 775 /srv/https/rutorrent
+
+# Create user rtor and the folder structure
+RUN  useradd --home /home/rtor --create-home rtor \
     && mkdir -p /home/rtor/.sessions \
     && mkdir -p /home/rtor/dl/torrents \
     && mkdir -p /home/rtor/dl/torrents_watch
 
 # Put config file
-ADD user_files/btlaunch.sh /home/rtor/bin/btlaunch.sh
-ADD user_files/btview.sh /home/rtor/bin/btview.sh
-ADD user_files/rtorrent.rc /home/rtor/.rtorrent.rc
+ADD ext/rtorrent.rc /home/rtor/.rtorrent.rc
 
-# Set acces to right user
+# Set access to right user
 RUN chown -R rtor:rtor /home/rtor
 
-# config lighttpd
-RUN cd /etc/lighttpd/
-RUN cp lighttpd.conf lighttpd.conf.bckp
-ADD conf_files/lighttpd.conf ./
-RUN mkdir /srv/https/
+# Config lighttpd
+ADD ext/lighttpd.conf /etc/lighttpd/lighttpd.conf
 
-# Get rutorrent
-RUN cd /srv/https/
-RUN wget http://dl.bintray.com/novik65/generic/rutorrent-3.6.tar.gz
-RUN tar xvfx rutorrent-3.6.tar.gz
-RUN rm rutorrent-3.6.tar.gz
-# Config rutorrent
-ADD conf_files/config.php.rutorrent /srv/https/rutorrent/config.php
-RUN chown -R www-data:www-data rutorrent
+# add startup script
+ADD ./ext/lighttpd-start.sh /root/
+RUN chmod +x /root/lighttpd-start.sh
+
+# add supervisor config file
+ADD ./ext/supervisord.conf /etc/supervisor/conf.d/
+
+
+EXPOSE 80
+EXPOSE 443
+EXPOSE 51654
+EXPOSE 51655
+
+VOLUME /home/rtor/dl
+VOLUME /srv/https/rutorrent/share
+
+CMD ["supervisord"]

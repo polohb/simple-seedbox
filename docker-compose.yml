@@ -1,0 +1,20 @@
+seedbox:
+  build: .
+  ports:
+    - "80:80"
+    - "8080:8080"
+    - "51654:51654"
+    - "51655:51655"
+#  volumes:
+#    - .localVolumes/dl:/home/rtor/dl
+#    - .localVolumes/share:/srv/https/rutorrent/share
+
+#seedbox-data:
+#  image: ubuntu:latest
+#  volumes:
+#    -
+
+
+#ENV LIB_VERSION 0.13.6
+#ENV RT_VERSION 0.9.6
+#ENV RUT_VERSION 3.7
