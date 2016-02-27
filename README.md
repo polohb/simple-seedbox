@@ -10,12 +10,12 @@ docker-compose build
 
 Run with :
 ```
-docker-compose up
+docker-compose up -d
 ```
 
 Remove stopped container with :
 ```
-docker-compose rm seedbox
+docker-compose rm 
 ```
 
 ## More
@@ -30,3 +30,13 @@ Exposed things :
  - DHT UDP port : 51655
  - Downloads volume : /home/rtor/dl/torrents
  - Rutorrent ui config volume : /srv/https/rutorrent/share
+
+# Data and volumes
+
+Data are saved in docker volumes :
+- `simpleseedbox_config` contains rutorrent configuration
+- `simpleseedbox_torrents` contains downloaded files
+
+Docker volumes can be found by default in `/var/lib/docker/volumes`.
+
+If you want to handle manually where files are stored, edit the volumes settings in the docker-compose.yml file.

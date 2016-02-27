@@ -1,20 +1,30 @@
-seedbox:
-  build: .
-  ports:
-    - "80:80"
-    - "8080:8080"
-    - "51654:51654"
-    - "51655:51655"
-#  volumes:
-#    - .localVolumes/dltorrents:/home/rtor/dl/torrents
-#    - .localVolumes/share:/srv/https/rutorrent/share
+version: '2'
 
-#seedbox-data:
-#  image: ubuntu:latest
-#  volumes:
-#    -
+volumes:
+    torrents:
+      driver: local
+    config:
+      driver: local
 
+services:
+    # rtorrent and rutorrent
+    seedbox:
+      build: ./Dockerfiles/seedbox/
+      ports:
+    #    - "80:80"
+    #    - "8080:8080"
+        - "51654:51654"
+        - "51655:51655"
+      volumes:
+        - torrents:/home/rtor/dl/torrents
+        - config:/srv/https/rutorrent/share
 
-#ENV LIB_VERSION 0.13.6
-#ENV RT_VERSION 0.9.6
-#ENV RUT_VERSION 3.7
+    # sipmple nginx frontend test
+    frontend:
+      build: ./Dockerfiles/frontend/
+      depends_on:
+        - seedbox
+      ports:
+        - "80:80"
+      env_file:
+        - config
